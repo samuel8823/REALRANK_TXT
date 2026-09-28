@@ -1,154 +1,34 @@
-// ============================================================
-// /boostpanel — RECOMPENSAS POR BOOSTS, SIN BOTONES
-// Se conserva el módulo original de tickets.
-// ============================================================
+const { Client, GatewayIntentBits } = require('discord.js');
 
-const configurarTicketsAnterior = module.exports;
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers
+    ]
+});
 
-module.exports = function configurarTicketsConBoost(bot) {
-  configurarTicketsAnterior(bot);
+const TOKEN = 'PON_AQUI_EL_TOKEN_DE_TU_BOT';
+const ROLE_ID = 'PON_AQUI_EL_ID_DEL_ROL';
 
-  // Registrar /boostpanel sin publicar el anuncio automáticamente.
-  bot.once(Events.ClientReady, async () => {
-    const comandoBoost = new SlashCommandBuilder()
-      .setName('boostpanel')
-      .setDescription(
-        'Publica las recompensas por mejorar el servidor'
-      )
-      .setDefaultMemberPermissions(
-        PermissionFlagsBits.ManageGuild
-      )
-      .toJSON();
+client.once('ready', () => {
+    console.log(`Bot conectado como ${client.user.tag}`);
+});
 
-    for (const servidor of bot.guilds.cache.values()) {
-      try {
-        const comandos =
-          await servidor.commands.fetch();
+client.on('guildMemberAdd', async (member) => {
+    try {
+        const role = member.guild.roles.cache.get(ROLE_ID);
 
-        if (
-          !comandos.some(
-            comando => comando.name === 'boostpanel'
-          )
-        ) {
-          await servidor.commands.create(
-            comandoBoost
-          );
-
-          console.log(
-            `[Boost] /boostpanel registrado en ${servidor.name}`
-          );
+        if (!role) {
+            console.log(`No encontré el rol ${ROLE_ID}`);
+            return;
         }
 
-      } catch (error) {
-        console.error(
-          '[Boost] Error al registrar el comando:',
-          error
-        );
-      }
-    }
-  });
+        await member.roles.add(role);
 
-  // Publicar únicamente cuando ejecutes /boostpanel.
-  bot.on(Events.InteractionCreate, async interaction => {
-    if (
-      !interaction.inGuild() ||
-      !interaction.isChatInputCommand() ||
-      interaction.commandName !== 'boostpanel'
-    ) {
-      return;
-    }
-
-    try {
-      await interaction.deferReply({
-        flags: MessageFlags.Ephemeral,
-      });
-
-      if (
-        !interaction.memberPermissions?.has(
-          PermissionFlagsBits.ManageGuild
-        )
-      ) {
-        return interaction.editReply(
-          '❌ Necesitas el permiso Gestionar servidor.'
-        );
-      }
-
-      const nombreImagen = 'ITACHI_PNG';
-
-      const rutaImagen = path.join(
-        __dirname,
-        nombreImagen
-      );
-
-      if (!fs.existsSync(rutaImagen)) {
-        return interaction.editReply(
-          '❌ Falta boost_server.png junto a tickets.js en GitHub.'
-        );
-      }
-
-      const panel = new EmbedBuilder()
-        .setColor(0x318aff)
-        .setTitle('⚡ BOOSTEA EL SERVIDOR')
-        .setDescription([
-          'Si mejoras el servidor, puedes reclamar recompensas por cada boost que hayas dado.',
-          '',
-          '**🎁 RECOMPENSAS**',
-          '',
-          '**1 |** Rol  MUTE por 5 días',
-          '**2 |** Rol Tmpo livre permanente',
-          '**3 |** Rol RLK | BOOST',
-          '**4 |** 20000',
-          '**5 |** Preferencia en tickets',
-          '',
-          '━━━━━━━━━━━━━━━━━━',
-          '',
-          '🎁 **Las recompensas se entregan después de verificar el boost.**',
-        ].join('\n'))
-        .setImage(
-          `attachment://${}`
-        )
-        .setFooter({
-          text: 'RLK | BOOST • Recompensas por boosts',
-        })
-        .setTimestamp(imsgen_png);
-
-      await interaction.channel.send({
-        embeds: [panel],
-
-        files: [
-          new AttachmentBuilder(rutaImagen, {
-            name: nombreImagen,
-          }),
-        ],
-
-        allowedMentions: {
-          parse: [],
-        },
-      });
-
-      await interaction.editReply(
-        '✅ Panel de boosts publicado correctamente.'
-      );
-
+        console.log(`✅ ${member.user.tag} recibió el rol ${role.name}`);
     } catch (error) {
-      console.error(
-        '[Boost] Error al publicar el panel:',
-        error
-      );
-
-      const respuesta =
-        '❌ No pude publicar el panel. Revisa los permisos y los registros de Railway.';
-
-      if (interaction.deferred || interaction.replied) {
-        await interaction
-          .editReply(respuesta)
-          .catch(console.error);
-      } else {
-        await interaction.reply({
-          content: respuesta,
-          flags: MessageFlags.Ephemeral,
-        }).catch(console.error);
-      }
+        console.error('❌ No pude asignar el rol:', error);
     }
-  });
-};
+});
+
+client.login(TOKEN);
