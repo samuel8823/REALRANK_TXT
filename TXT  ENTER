@@ -110,7 +110,7 @@ module.exports = function configurarTicketsConBoost(bot) {
         .setFooter({
           text: 'RLK | BOOST • Recompensas por boosts',
         })
-        .setTimestamp(ITACHI_PNG);
+        .setTimestamp(imsgen_png);
 
       await interaction.channel.send({
         embeds: [panel],
